@@ -11,6 +11,10 @@
   margin: 0 auto;
 }
 
+.is-hide {
+opacity: 0;
+}
+
 .gallery {
   display: grid;
   max-width: 1140px;
