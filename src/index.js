@@ -1,19 +1,18 @@
 import PicturesApiService from "./fetchPictures";
 import SimpleLightbox from "simplelightbox";
 import "simplelightbox/dist/simple-lightbox.min.css";
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 const searchForm = document.querySelector('#search-form');
 const btnLoadMore = document.querySelector('.load-more');
 const picturesApiService = new PicturesApiService();
 const galleryList = document.querySelector('.gallery');
 const gallery = new SimpleLightbox('.gallery a');
-
-
-console.log(gallery);
+const size = searchForm.getBoundingClientRect();
 
 searchForm.addEventListener('submit', onSubmit);
-btnLoadMore.addEventListener('click', onClick);
 galleryList.addEventListener('click', onGalleryItemClick);
+document.addEventListener('scroll', endOfGallary);
 
 function onSubmit(e) {
   e.preventDefault();
@@ -23,15 +22,28 @@ function onSubmit(e) {
   creatPictures();
 }
 
-function onClick() {
-  creatPictures();
+function endOfGallary() {
+  let windowRelativeBottom = document.documentElement.getBoundingClientRect().bottom;
+  const viewPort = document.documentElement.clientHeight;
+  const endGallery = windowRelativeBottom - viewPort;
+
+  if (endGallery <= 0) {
+    creatPictures();
+  }
 }
 
-async function creatPictures() {
-  const pictures = await picturesApiService.fetchPictures();
-  const markupPictures = await pictures.map(makeup).join(' ');
-  galleryList.insertAdjacentHTML('beforeend', markupPictures);
-  gallery.refresh();
+function creatPictures() {
+  picturesApiService.fetchPictures().then(pictures => {
+    const markupPictures = pictures.map(makeup).join(' ');
+    galleryList.insertAdjacentHTML('beforeend', markupPictures);
+    gallery.refresh();
+  }
+
+  ).catch(function (error) {
+    if (error.response.status === 400) {
+      Notify.failure("We're sorry, but you've reached the end of search results.");
+    }
+  });
 };
 
 
@@ -66,11 +78,6 @@ const makeup = ({ webformatURL, largeImageURL, tags, likes, views, comments, dow
 
 function onGalleryItemClick(e) {
   e.preventDefault();
-  const isGalleryImage = e.target.classList.contains('gallery__image')
-  if (!isGalleryImage) {
-    return;
-  }
-  console.log('aaaaaaaaa');
   gallery.on('close.simplelightbox', function () {
     gallery.close();
   });
